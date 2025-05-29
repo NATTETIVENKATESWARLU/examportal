@@ -275,3 +275,26 @@ SWAGGER_SETTINGS = {
 
 
 #----------------------------------------------------------------------------------------------------------
+
+#emailsettings
+# settings.py (add these at the end or in an appropriate section)
+
+# For development, emails will be printed to the console
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+DEFAULT_FROM_EMAIL = 'noreply@yourapp.com' # Change as needed
+
+# For production, configure your SMTP settings:
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Replace with your actual email settings
+EMAIL_HOST='smtp.gmail.com'
+EMAIL_HOST_USER='n.venkateswarlu180@gmail.com'
+EMAIL_HOST_PASSWORD='idlrchjzofwgpddo'
+EMAIL_PORT=465
+EMAIL_USE_SSL=True
+EMAIL_USE_TLS=False
+
+# Custom settings for your app
+OTP_EXPIRY_MINUTES = 5 # OTPs will be valid for 5 minutes
+PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = 10 # Password reset tokens will be valid for 10 minutes
+APP_NAME = "users" # Used in OTP email template

@@ -1,0 +1,16 @@
+
+
+POST http://127.0.0.1:8000/api/token/ HTTP/1.1
+Content-Type: application/json
+
+{
+  "username": "venkey",
+  "password": "12345"
+}
+
+
+GET http://127.0.0.1:8000/api/register/ HTTP/1.1
+Content-Type: application/json
+
+
+
