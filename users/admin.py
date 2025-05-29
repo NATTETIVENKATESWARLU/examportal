@@ -1,9 +1,8 @@
-from django.contrib import admin
 
 # Register your models here.
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import CustomUser, Address, Profile
+from .models import CustomUser, Address, Profile, OTP
 #-------------------------------------------------------------------------------------
 # Inline for Address (Many-to-One)
 class AddressInline(admin.TabularInline):
@@ -28,7 +27,7 @@ class CustomUserAdmin(UserAdmin):
 
     fieldsets = (
         (None, {'fields': ('username', 'email', 'password')}),
-        ('Personal Info', {'fields': ('first_name', 'last_name', 'phone_number', 'date_of_birth')}),
+        ('Personal Info', {'fields': ('first_name', 'last_name', 'phone_number')}),  # ❌ 'date_of_birth' removed
         ('Permissions', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
         ('Role', {'fields': ('role',)}),
@@ -40,6 +39,30 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('username', 'email', 'phone_number', 'password1', 'password2', 'role'),
         }),
     )
+
+#otp admin class
+@admin.register(OTP) # Using the decorator is a common way
+class OTPAdmin(admin.ModelAdmin):
+    list_display = ('user', 'otp_code', 'created_at', 'expires_at', 'is_verified')
+    search_fields = ('user__email', 'otp_code')
+    list_filter = ('is_verified', 'created_at') # Added 'created_at' as an example filter
+    readonly_fields = ('user', 'otp_code', 'created_at', 'expires_at', 'is_verified') # Make all fields read-only if change is disabled
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        # Return False to prevent any changes.
+        # Even if you allow changes for superusers, it's usually better to handle OTP state via application logic.
+        return False 
+
+    def has_delete_permission(self, request, obj=None):
+        # Optionally, prevent deletion too if OTPs are for audit.
+        # return False
+        return super().has_delete_permission(request, obj) # Default behavior (allows if user has permission)
+
+#-------------------------------------------------------------------------------------
+
 #-------------------------------------------------------------------------------------
 # Register models with admin
 admin.site.register(CustomUser, CustomUserAdmin)
