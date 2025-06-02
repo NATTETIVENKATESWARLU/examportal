@@ -6,7 +6,9 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.conf import settings # Import settings
 import uuid
-
+#-------------------------------------------------------------------------------------
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+#-------------------------------------------------------------------------------------
 class RegisterSerializer(serializers.ModelSerializer):
     confirm_password = serializers.CharField(write_only=True)
 
@@ -56,8 +58,6 @@ class AddressSerializer(serializers.ModelSerializer):
 # NEW SERIALIZERS FOR PASSWORD MANAGEMENT
 #-------------------------------------------------------------------------------------
 
-
-
 class EmailSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
@@ -65,7 +65,7 @@ class EmailSerializer(serializers.Serializer):
         if not CustomUser.objects.filter(email__iexact=value).exists(): # Case-insensitive email check
             raise serializers.ValidationError("User with this email address does not exist.")
         return value
-
+#-------------------------------------------------------------------------------------
 class VerifyOTPSerializer(serializers.Serializer):
     email = serializers.EmailField() # Email is still needed to find the user and their OTP
     otp_code = serializers.CharField(max_length=6, min_length=6)
@@ -113,7 +113,7 @@ class VerifyOTPSerializer(serializers.Serializer):
         
         return otp_instance.password_reset_token # Return the generated token
 
-
+#-------------------------------------------------------------------------------------
 class SetNewPasswordSerializer(serializers.Serializer):
     # email and otp_code are removed from here
     password_reset_token = serializers.UUIDField(required=True)
@@ -161,7 +161,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
         otp_instance.delete() 
         return user
 
-
+#-------------------------------------------------------------------------------------
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
     new_password = serializers.CharField(write_only=True, required=True, style={'input_type': 'password'})
@@ -194,3 +194,18 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(new_password)
         user.save()
         return user
+    
+#-------------------------------------------------------------------------------------
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+    def validate(self, attrs):
+        self.token = attrs['refresh']
+        return attrs
+
+    def save(self, **kwargs):
+        try:
+            token = RefreshToken(self.token)
+            token.blacklist()
+        except TokenError:
+            raise serializers.ValidationError("Invalid or expired refresh token.")

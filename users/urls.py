@@ -10,7 +10,8 @@ from .views import (
     ChangePasswordView,
     RequestPasswordResetView,
     VerifyOTPView,
-    SetNewPasswordView
+    SetNewPasswordView,
+    LogoutView,
 )
 
 
@@ -27,6 +28,7 @@ urlpatterns = [
     path('auth/password/reset/request/', RequestPasswordResetView.as_view(), name='request_password_reset_otp'),
     path('auth/password/reset/verify-otp/', VerifyOTPView.as_view(), name='verify_otp_password_reset'),
     path('auth/password/reset/confirm/', SetNewPasswordView.as_view(), name='set_new_password_after_otp'),# Renamed 'set-new' to 'confirm' for clarity
+    path('auth/logout/', LogoutView.as_view(), name='logout'),
 
 ]
 

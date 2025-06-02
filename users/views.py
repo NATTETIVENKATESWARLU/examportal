@@ -7,7 +7,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication # Kept fro
 from rest_framework.generics import UpdateAPIView, RetrieveAPIView # Kept from original
 
 #-------------------------------------------------------------------------------------------------
-from .models import CustomUser, Profile, Address, OTP # Import OTP
+from .models import (CustomUser, Profile, Address, OTP, ) # Import models including OTP
 #-------------------------------------------------------------------------------------------------
 from .serializers import (
     RegisterSerializer,
@@ -19,6 +19,8 @@ from .serializers import (
     VerifyOTPSerializer,
     SetNewPasswordSerializer,
     ChangePasswordSerializer,
+    #logout serializer is not needed as JWT handles token invalidation on logout
+    LogoutSerializer,
 )
 from .utils import generate_otp, send_otp_email # Import OTP utilities
 from django.utils import timezone # Import timezone
@@ -177,6 +179,8 @@ class RequestPasswordResetView(APIView):
                     status=status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+#-------------------------------------------------------------------------------------
 class VerifyOTPView(APIView):
     """
     Verify the OTP.
@@ -200,7 +204,7 @@ class VerifyOTPView(APIView):
                 "password_reset_token": password_reset_token 
                 }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+#-------------------------------------------------------------------------------------
 
 class SetNewPasswordView(APIView):
     """
@@ -220,7 +224,7 @@ class SetNewPasswordView(APIView):
             serializer.save() 
             return Response({"message": "Your password has been reset successfully. Please log in with your new password."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
+#-------------------------------------------------------------------------------------
 
 class ChangePasswordView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -235,4 +239,27 @@ class ChangePasswordView(APIView):
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Password changed successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#-------------------------------------------------------------------------------------
+
+#logout view is not needed as JWT handles token invalidation on logout
+
+class LogoutView(APIView):
+    """
+    POST request to logout a user by blacklisting the refresh token.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=LogoutSerializer,
+        responses={
+            205: "Logout successful.",
+            400: "Invalid or expired refresh token."
+        }
+    )
+    def post(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
