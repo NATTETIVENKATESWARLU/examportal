@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework.authtoken",
     "corsheaders",
     'drf_yasg',
     "rest_framework",
@@ -55,6 +56,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    
 ]
 
 ROOT_URLCONF = "examportal.urls"
@@ -298,3 +300,5 @@ EMAIL_USE_TLS=False
 OTP_EXPIRY_MINUTES = 5 # OTPs will be valid for 5 minutes
 PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = 10 # Password reset tokens will be valid for 10 minutes
 APP_NAME = "users" # Used in OTP email template
+
+#----------------------------------------------------------------------------------------------------------

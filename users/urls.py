@@ -30,6 +30,7 @@ urlpatterns = [
     path('auth/password/reset/confirm/', SetNewPasswordView.as_view(), name='set_new_password_after_otp'),# Renamed 'set-new' to 'confirm' for clarity
     path('auth/logout/', LogoutView.as_view(), name='logout'),
 
+
 ]
 
 
