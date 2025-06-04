@@ -7,7 +7,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication # Kept fro
 from rest_framework.generics import UpdateAPIView, RetrieveAPIView # Kept from original
 
 #-------------------------------------------------------------------------------------------------
-from .models import (CustomUser, Profile, Address, OTP, ) # Import models including OTP
+from .models import (CustomUser, Profile, Address,OTP ) # Import models including OTP
 #-------------------------------------------------------------------------------------------------
 from .serializers import (
     RegisterSerializer,
