@@ -79,3 +79,4 @@ class OTP(models.Model):
             self.password_reset_token_expires_at is not None and
             timezone.now() < self.password_reset_token_expires_at
         )
+    

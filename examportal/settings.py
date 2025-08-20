@@ -9,6 +9,12 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+from decouple import config
+
+# ===================== BASE SETTINGS =====================
+SECRET_KEY = config("SECRET_KEY")
+DEBUG = config("DEBUG", default=False, cast=bool)
+ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="").split(",")
 
 from pathlib import Path
 
@@ -43,6 +49,9 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    'oauth2_provider',
+    'social_django',
+    'drf_social_oauth2',
     "users",
 ]
 
@@ -149,11 +158,128 @@ CORS_ALLOWED_ORIGINS =[
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'oauth2_provider.ext.rest_framework.OAuth2Authentication',  # django-oauth-toolkit < 1.0.0
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',  # django-oauth-toolkit >= 1.0.0
+        'drf_social_oauth2.authentication.SocialAuthentication',
     ),
 }
+SOCIAL_AUTH_GOOGLE_OAUTH2_AUTH_EXTRA_ARGUMENTS = {
+    'access_type': 'offline',
+    'prompt': 'consent select_account'
+}
+#----------------------------------------------------------------------------------------------------------
+# Social Auth Settings
+SOCIAL_AUTH_URL_NAMESPACE = 'social'
+SOCIAL_AUTH_ADMIN_USER_FIELDS = ['username', 'first_name', 'email','phone_number']
+SOCIAL_AUTH_JSONFIELD_ENABLED = True 
+
+# SOCIAL_AUTH_PIPELINE is a list of functions that will be called in order to process the authentication.
+SOCIAL_AUTH_PIPELINE = (
+    # Default social-auth pipeline steps
+    'social_core.pipeline.social_auth.social_details',
+    'social_core.pipeline.social_auth.social_uid',
+    'social_core.pipeline.social_auth.auth_allowed',
+    'social_core.pipeline.social_auth.social_user',
+    'social_core.pipeline.user.get_username',
+    'social_core.pipeline.user.create_user',
+    'social_core.pipeline.social_auth.associate_user',
+    'social_core.pipeline.social_auth.load_extra_data',
+    'social_core.pipeline.user.user_details',
+
+    # drf_social_oauth2 required pipeline step
+    'drf_social_oauth2.pipeline.save_status_to_session',
+    'drf_social_oauth2.pipeline.load_extra_data',
+    'drf_social_oauth2.pipeline.user_details',
+
+    # ✅ Custom pipeline functions for your models
+    'users.pipeline.create_profile',
+    'users.pipeline.create_default_address',
+)
 
 
 #----------------------------------------------------------------------------------------------------------
+AUTHENTICATION_BACKENDS = (
+
+    # Google  OAuth2
+    'social_core.backends.google.GoogleOAuth2',
+    # Facebook OAuth2
+    'social_core.backends.facebook.FacebookAppOAuth2',
+    'social_core.backends.facebook.FacebookOAuth2',
+    # GitHub OAuth2
+    'social_core.backends.github.GithubOAuth2',
+    # Linked OpenID
+    'drf_social_oauth2.backends.LinkedInOpenIDUserInfo',
+
+    # Django's built-in authentication backend
+    'drf_social_oauth2.backends.DjangoOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+#----------------------------------------------------------------------------------------------------------
+# facebook integration
+SOCIAL_AUTH_FACEBOOK_KEY = config("SOCIAL_AUTH_FACEBOOK_KEY")
+SOCIAL_AUTH_FACEBOOK_SECRET = config("SOCIAL_AUTH_FACEBOOK_SECRET")
+
+# Define SOCIAL_AUTH_FACEBOOK_SCOPE to get extra permissions from Facebook.
+# Email is not sent by default, to get it, you must request the email permission.
+SOCIAL_AUTH_FACEBOOK_SCOPE = ['username', 'email', 'public_profile']
+SOCIAL_AUTH_FACEBOOK_PROFILE_EXTRA_PARAMS = {
+    'fields': 'id, name, email'
+}
+#----------------------------------------------------------------------------------------------------------
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config("SOCIAL_AUTH_GOOGLE_OAUTH2_KEY")
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config("SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET")
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = False  # since localhost is HTTP
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
+
+#-----------------------------------------------------------------------------------------------------------
+# GitHub integration
+SOCIAL_AUTH_GITHUB_KEY = config("SOCIAL_AUTH_GITHUB_KEY")
+SOCIAL_AUTH_GITHUB_SECRET = config("SOCIAL_AUTH_GITHUB_SECRET")
+SOCIAL_AUTH_GITHUB_SCOPE = ['user:email', 'read:user']
+SOCIAL_AUTH_GITHUB_PROFILE_EXTRA_PARAMS = { 
+    'fields': 'id, login, name, email, avatar_url, bio'
+}
+#-----------------------------------------------------------------------------------------------------------
+# LinkedIn integration
+SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY = config("SOCIAL_AUTH_LINKEDIN_OAUTH2_KEY")
+SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET = config("SOCIAL_AUTH_LINKEDIN_OAUTH2_SECRET")
+SOCIAL_AUTH_LINKEDIN_OAUTH2_SCOPE = [
+    'r_username',  # Read username
+    'r_liteprofile',  # Read basic profile
+    'r_emailaddress',  # Read email address
+    'w_member_social',  # Write access to member's social actions
+    'r_fullprofile',  # Read full profile (if needed)
+    
+]
+#-----------------------------------------------------------------------------------------------------------
+# OAuth2 Provider Settings
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRES_IN': 36000,  # 10 hours
+    'AUTHORIZATION_CODE_EXPIRES_IN': 600,  # 10 minutes
+    'REFRESH_TOKEN_EXPIRES_IN': 1209600,  # 14 days
+    'CLIENT_ID_GENERATOR_CLASS': 'oauth2_provider.generators.ClientIdGenerator',
+    'CLIENT_SECRET_GENERATOR_CLASS': 'oauth2_provider.generators.ClientSecretGenerator',
+    'SCOPES': {
+        'read': 'Read scope',
+        'write': 'Write scope',
+        'groups': 'Access to your groups',
+        'email': 'Access to your email address',
+        'profile': 'Access to your profile information',
+        'social': 'Access to your social accounts',
+    },
+    'DEFAULT_SCOPES': ['read', 'write'],
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.OAuthLibCore',
+    'OAUTH2_VALIDATOR_CLASS': 'oauth2_provider.oauth2_validators.OAuth2Validator',
+}
+
+
+
+#-----------------------------------------------------------------------------------------------------------
 
 # Django project settings.py
 

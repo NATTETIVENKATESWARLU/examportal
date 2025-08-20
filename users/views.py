@@ -5,7 +5,13 @@ from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.authentication import JWTAuthentication # Kept from original, used by permission_classes implicitly
 from rest_framework.generics import UpdateAPIView, RetrieveAPIView # Kept from original
+#-------------------------------------------------------------------------------------------------
 
+from drf_social_oauth2.views import ConvertTokenView # Import for social token exchange
+from django.contrib.auth import get_user_model
+from rest_framework_simplejwt.tokens import RefreshToken
+from drf_yasg import openapi # Import for Swagger documentation
+CustomUser = get_user_model()
 #-------------------------------------------------------------------------------------------------
 from .models import (CustomUser, Profile, Address,OTP ) # Import models including OTP
 #-------------------------------------------------------------------------------------------------
@@ -263,3 +269,72 @@ class LogoutView(APIView):
             serializer.save()
             return Response({"message": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+#-------------------------------------------------------------------------------------
+from django.conf import settings
+from rest_framework.test import APIRequestFactory
+import jwt
+import requests
+class CustomSocialLoginView(APIView):
+    def post(self, request, *args, **kwargs):
+        print("CustomSocialLoginView called with data:", request.data)
+        # Validate required fields
+        token = request.data.get('token')
+        if not token:
+            return Response(
+                {'error': 'Google access token is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verify token with Google
+        google_response = requests.get(
+            'https://www.googleapis.com/oauth2/v3/userinfo',
+            params={'access_token': token}
+        )
+
+        if google_response.status_code != 200:
+            return Response(
+                {'error': 'Invalid Google token'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        # Extract user data
+        user_data = google_response.json()
+        email = user_data.get('email')
+        if not email:
+            return Response(
+                {'error': 'Email not provided by Google'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Get or create user
+        try:
+            user, created = CustomUser.objects.get_or_create(
+                email=email,
+                defaults={
+                    'username': email.split('@')[0],
+                    'first_name': user_data.get('given_name', ''),
+                    'last_name': user_data.get('family_name', ''),
+                    'is_active': True
+                }
+            )
+
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'user': {
+                    'email': user.email,
+                    'id': user.id,
+                    'is_new': created
+                }
+            })
+
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )

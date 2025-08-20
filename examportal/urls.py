@@ -26,6 +26,7 @@ from django.conf.urls.static import static
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from rest_framework import permissions
+from users.views import CustomSocialLoginView
 
 #-----------------------------------------------------------------------------------------------------
 from rest_framework_simplejwt.views import (
@@ -47,6 +48,13 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("users.urls")),
     #------------------------------------------------------------------------------------------------------
+    #oauth2
+    path('auth/custom-social-login/', CustomSocialLoginView.as_view(), name='custom-social-login'),
+    # Include other auth URLs
+    path('auth/', include('drf_social_oauth2.urls', namespace='drf')),
+    path('auth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
+    
+    #------------------------------------------------------------------------------------------------------
     # JWT Authentication
     path('api/token/',MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
@@ -56,5 +64,6 @@ urlpatterns = [
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    
 
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
